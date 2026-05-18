@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { 
-  CloudUpload, Cpu, CheckCircle2, RefreshCw, 
+import {
+  CloudUpload, Cpu, CheckCircle2, RefreshCw,
   Hourglass, FileScan, FileText, ArrowUp, AlertCircle, Trash2
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
@@ -79,7 +79,7 @@ export default function UploadPage() {
       formData.append('file', file);
 
       setProgress(15);
-      const uploadRes = await fetch('http://localhost:8000/api/upload', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -90,7 +90,7 @@ export default function UploadPage() {
       }
 
       const extractionData = await uploadRes.json();
-      
+
       if (!extractionData.success || !extractionData.parameters || extractionData.parameters.length === 0) {
         throw new Error('No medical parameters could be recognized in the document. Please check the scan quality.');
       }
@@ -99,7 +99,7 @@ export default function UploadPage() {
       setStatusMessage('Extracting parameters & generating English explanation...');
 
       // 4. API Step 2: English Explanation
-      const explainResEn = await fetch('http://localhost:8000/api/explain', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,12 +114,12 @@ export default function UploadPage() {
       }
 
       const explainDataEn = await explainResEn.json();
-      
+
       setProgress(75);
       setStatusMessage('Translating explanations and next steps into Hindi...');
 
       // 5. API Step 3: Hindi Explanation
-      const explainResHi = await fetch('http://localhost:8000/api/explain', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,10 +138,10 @@ export default function UploadPage() {
       // 6. Complete and save to storage history (Max 5)
       setProgress(100);
       setStatusMessage('Saving to report history...');
-      
+
       const storedHistory = localStorage.getItem('arogya_reports_history');
       let historyArray = storedHistory ? JSON.parse(storedHistory) : [];
-      
+
       const newItem = {
         id: Date.now().toString(),
         filename: file.name,
@@ -164,7 +164,7 @@ export default function UploadPage() {
       localStorage.setItem('arogya_uploaded_filename', file.name);
 
       setUploadState('done');
-      
+
       // Redirect to results dashboard
       setTimeout(() => {
         router.push('/results');
@@ -198,13 +198,13 @@ export default function UploadPage() {
     <>
       <Navbar />
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 md:px-8 py-10 md:py-12 flex flex-col">
-        
+
         <div className="mb-10 flex justify-between items-end">
           <div>
             <h1 className="text-4xl text-on-background font-semibold mb-2">Analyze Medical Report</h1>
             <p className="text-lg text-on-surface-variant">Upload your lab results or clinical documents for instant AI extraction and interpretation.</p>
           </div>
-          <button 
+          <button
             onClick={simulateDemoError}
             className="text-xs text-on-surface-variant hover:text-error transition-colors border border-outline-variant/30 rounded-full px-3 py-1 bg-surface-container-low"
           >
@@ -213,8 +213,8 @@ export default function UploadPage() {
         </div>
 
         {/* Hidden File Input */}
-        <input 
-          type="file" 
+        <input
+          type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           accept=".pdf,image/jpeg,image/png,image/webp"
@@ -222,29 +222,29 @@ export default function UploadPage() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
-          
+
           {/* Left Column: Upload & Processing Status */}
           <div className="lg:col-span-5 flex flex-col gap-8">
-            
+
             {/* Upload Zone Card */}
             <AnimatePresence mode="popLayout">
               {uploadState === 'idle' && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className={`bg-surface-container-lowest rounded-3xl shadow-sm border p-8 transition-all duration-300 relative overflow-hidden group ${isHovering ? 'border-primary bg-primary/5 shadow-[0_8px_32px_rgba(0,104,95,0.08)]' : 'border-outline-variant/30'}`}
                   onDragOver={(e) => { e.preventDefault(); setIsHovering(true); }}
                   onDragLeave={() => setIsHovering(false)}
-                  onDrop={(e) => { 
-                    e.preventDefault(); 
-                    setIsHovering(false); 
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsHovering(false);
                     if (e.dataTransfer.files?.[0]) {
                       processFile(e.dataTransfer.files[0]);
                     }
                   }}
                 >
-                  <div 
+                  <div
                     className="rounded-2xl border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container-low transition-colors min-h-[280px]"
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -253,13 +253,13 @@ export default function UploadPage() {
                     </div>
                     <h3 className="text-2xl font-semibold text-on-background mb-2">Drag & drop your report</h3>
                     <p className="text-base text-on-surface-variant mb-6">Supports PDF, JPG, PNG, WEBP up to 10MB.</p>
-                    
+
                     <div className="flex items-center gap-2 mb-6 w-full max-w-[200px]">
                       <div className="h-px bg-outline-variant flex-grow" />
                       <span className="text-xs font-semibold text-outline uppercase tracking-wider">or</span>
                       <div className="h-px bg-outline-variant flex-grow" />
                     </div>
-                    
+
                     <button className="bg-surface border border-outline-variant text-primary font-medium text-sm px-6 py-2 rounded-lg hover:bg-primary-container/5 transition-colors">
                       Browse Files
                     </button>
@@ -268,7 +268,7 @@ export default function UploadPage() {
               )}
 
               {uploadState === 'error' && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.95, x: 20 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -293,18 +293,18 @@ export default function UploadPage() {
 
               {/* Processing Status Card */}
               {(uploadState === 'processing' || uploadState === 'done') && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0, y: 20 }}
                   animate={{ opacity: 1, height: 'auto', y: 0 }}
                   className="bg-surface-container-lowest rounded-3xl shadow-sm border border-primary/20 p-8 relative overflow-hidden"
                 >
                   <div className="absolute top-0 left-0 w-full h-1 bg-surface-variant">
-                    <motion.div 
-                      className="h-full bg-primary rounded-r-full" 
+                    <motion.div
+                      className="h-full bg-primary rounded-r-full"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  
+
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       {uploadState === 'done' ? (
@@ -315,7 +315,7 @@ export default function UploadPage() {
                         </motion.div>
                       )}
                     </div>
-                    
+
                     <div className="flex-grow">
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="text-xl font-semibold text-on-background">
@@ -323,7 +323,7 @@ export default function UploadPage() {
                         </h3>
                         <span className="font-mono text-sm font-semibold text-primary">{Math.round(progress)}%</span>
                       </div>
-                      
+
                       <p className="text-sm text-on-surface-variant mb-4">
                         {statusMessage}
                       </p>
@@ -334,7 +334,7 @@ export default function UploadPage() {
                           <span className="text-outline">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</span>
                         </div>
                       )}
-                      
+
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           {progress > 15 ? <CheckCircle2 className="text-primary w-4 h-4 fill-primary/20" /> : <Hourglass className="text-outline w-4 h-4" />}
@@ -345,16 +345,16 @@ export default function UploadPage() {
                           <span className={`text-sm ${progress > 50 ? 'text-on-surface font-medium' : 'text-on-surface-variant opacity-50'}`}>Mapping reference ranges & statuses</span>
                         </div>
                         <div className="flex items-center gap-3">
-                           {uploadState === 'done' ? <CheckCircle2 className="text-primary w-4 h-4 fill-primary/20" /> : <Cpu className={`w-4 h-4 ${progress > 50 ? 'text-primary animate-pulse' : 'text-outline'}`} />}
+                          {uploadState === 'done' ? <CheckCircle2 className="text-primary w-4 h-4 fill-primary/20" /> : <Cpu className={`w-4 h-4 ${progress > 50 ? 'text-primary animate-pulse' : 'text-outline'}`} />}
                           <span className={`text-sm ${uploadState === 'done' ? 'text-on-surface font-medium' : 'text-on-surface-variant opacity-30'}`}>Generating bilingual AI explanations</span>
                         </div>
                       </div>
 
                       {uploadState === 'processing' && (
                         <div className="mt-8 pt-4 border-t border-outline-variant/20 flex justify-end">
-                           <button onClick={resetUpload} className="text-xs flex items-center gap-2 text-error hover:text-error/80 font-medium transition-colors">
-                             <Trash2 className="w-3 h-3" /> Cancel Analysis
-                           </button>
+                          <button onClick={resetUpload} className="text-xs flex items-center gap-2 text-error hover:text-error/80 font-medium transition-colors">
+                            <Trash2 className="w-3 h-3" /> Cancel Analysis
+                          </button>
                         </div>
                       )}
                     </div>
@@ -362,13 +362,13 @@ export default function UploadPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
           </div>
 
           {/* Right Column: Split Screen Extraction Preview */}
           <div className="lg:col-span-7 h-full">
             <div className="bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/30 overflow-hidden h-full min-h-[600px] flex flex-col">
-              
+
               {/* Header */}
               <div className="px-6 py-4 border-b border-outline-variant/20 bg-surface-bright flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -382,27 +382,27 @@ export default function UploadPage() {
 
               {/* Split View Canvas */}
               <div className="flex-grow flex relative overflow-hidden bg-surface-container">
-                
+
                 {/* Image Preview Panel */}
                 <div className="w-1/2 h-full relative border-r border-outline-variant/30 bg-white flex items-center justify-center overflow-hidden">
                   {uploadState === 'processing' && (
-                    <motion.div 
+                    <motion.div
                       className="absolute inset-0 z-10 overflow-hidden pointer-events-none"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-pulse" />
-                      <motion.div 
+                      <motion.div
                         className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/80 to-transparent shadow-[0_4px_12px_rgba(0,104,95,0.4)]"
                         animate={{ top: ['0%', '100%'] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
                       />
                     </motion.div>
                   )}
-                  
+
                   {previewUrl ? (
-                    <Image 
-                      src={previewUrl} 
+                    <Image
+                      src={previewUrl}
                       alt="Medical Document Preview"
                       fill
                       className="object-contain p-2"
@@ -415,26 +415,26 @@ export default function UploadPage() {
                       </span>
                     </div>
                   ) : (
-                     <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                       <FileText className="w-24 h-24 text-outline" />
-                     </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                      <FileText className="w-24 h-24 text-outline" />
+                    </div>
                   )}
                 </div>
-                
+
                 {/* Extracted Data Panel */}
                 <div className="w-1/2 h-full bg-surface-container-lowest overflow-y-auto p-4 space-y-4">
-                  
+
                   {uploadState === 'idle' && (
-                     <div className="h-full flex flex-col items-center justify-center text-center px-4 opacity-50">
-                       <p className="text-sm text-on-surface-variant">Upload a report to see extracted values here in real time.</p>
-                     </div>
+                    <div className="h-full flex flex-col items-center justify-center text-center px-4 opacity-50">
+                      <p className="text-sm text-on-surface-variant">Upload a report to see extracted values here in real time.</p>
+                    </div>
                   )}
 
                   {uploadState === 'error' && (
-                     <div className="h-full flex flex-col items-center justify-center text-center px-4 text-error opacity-60">
-                       <AlertCircle className="w-10 h-10 mb-2" />
-                       <p className="text-xs font-semibold">Extraction paused due to file error.</p>
-                     </div>
+                    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-error opacity-60">
+                      <AlertCircle className="w-10 h-10 mb-2" />
+                      <p className="text-xs font-semibold">Extraction paused due to file error.</p>
+                    </div>
                   )}
 
                   {uploadState === 'processing' && progress < 30 && (
@@ -452,10 +452,10 @@ export default function UploadPage() {
                       {mockExtractedParams.map((param, index) => {
                         if (progress < param.showAt) return null;
                         return (
-                          <motion.div 
+                          <motion.div
                             key={index}
-                            initial={{ opacity: 0, y: 10 }} 
-                            animate={{ opacity: 1, y: 0 }} 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                             className={`border p-4 rounded-lg transition-colors ${param.isHigh ? 'border-error/20 bg-error-container/10' : 'border-outline-variant/20 hover:bg-surface-bright'}`}
                           >
                             <div className="flex justify-between items-center mb-1">
@@ -472,7 +472,7 @@ export default function UploadPage() {
                           </motion.div>
                         );
                       })}
-                      
+
                       {progress < 90 && (
                         <div className="glass-card p-4 rounded-lg animate-pulse mt-4">
                           <div className="w-full">
