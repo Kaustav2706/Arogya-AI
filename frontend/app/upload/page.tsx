@@ -79,7 +79,7 @@ export default function UploadPage() {
       formData.append('file', file);
 
       setProgress(15);
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -99,7 +99,7 @@ export default function UploadPage() {
       setStatusMessage('Extracting parameters & generating English explanation...');
 
       // 4. API Step 2: English Explanation
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
+      const explainResEn = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -119,7 +119,7 @@ export default function UploadPage() {
       setStatusMessage('Translating explanations and next steps into Hindi...');
 
       // 5. API Step 3: Hindi Explanation
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
+      const explainResHi = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/explain`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
